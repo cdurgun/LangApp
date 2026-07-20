@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Quiz')}"></head>
+<body>
+<div th:replace="~{fragments/layout :: navbar}"></div>
+<div class="container">
+    <div class="card">
+        <h1>Quiz</h1>
+
+        <p th:if="${result == 'dogru'}" class="success">Doğru cevap! 🎉</p>
+        <p th:if="${result == 'yanlis'}" class="error">Yanlış, tekrar dene.</p>
+
+        <div th:if="${#lists.isEmpty(questions)}">
+            <p>Bu dil için henüz soru eklenmemiş.</p>
+        </div>
+
+        <div th:unless="${#lists.isEmpty(questions)}" th:with="q=${questions[0]}">
+            <h2 th:text="${q.questionText}">Soru metni</h2>
+            <form th:action="@{'/practice/quiz/' + ${q.id} + '/answer'}" method="post">
+                <button th:each="opt : ${q.shuffledOptions}"
+                        type="submit" name="selectedAnswer" th:value="${opt}"
+                        class="option-btn" th:text="${opt}">Seçenek</button>
+            </form>
+        </div>
+    </div>
+</div>
+</body>
+</html>

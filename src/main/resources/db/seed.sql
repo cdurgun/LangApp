@@ -21,30 +21,30 @@ INSERT INTO topics (language_id, name, level)
 SELECT id, 'Günlük Konuşma', 'A2' FROM languages WHERE code = 'ru';
 
 -- --- İngilizce kelime kartları (Temel Kelimeler / A1) ---
-INSERT INTO vocab_items (topic_id, source_text, target_text, example_sentence)
-SELECT t.id, v.source_text, v.target_text, v.example_sentence
+INSERT INTO vocab_items (topic_id, source_text, target_text, example_sentence, word_type)
+SELECT t.id, v.source_text, v.target_text, v.example_sentence, v.word_type
 FROM topics t
 JOIN languages l ON t.language_id = l.id AND l.code = 'en' AND t.level = 'A1'
 CROSS JOIN (VALUES
-    ('apple', 'elma', 'I eat an apple every morning.'),
-    ('house', 'ev', 'This is my house.'),
-    ('water', 'su', 'Can I have some water?'),
-    ('friend', 'arkadaş', 'She is my best friend.'),
-    ('book', 'kitap', 'I am reading a book.')
-) AS v(source_text, target_text, example_sentence);
+    ('apple', 'elma', 'I eat an apple every morning.', 'NOUN'),
+    ('house', 'ev', 'This is my house.', 'NOUN'),
+    ('water', 'su', 'Can I have some water?', 'NOUN'),
+    ('friend', 'arkadaş', 'She is my best friend.', 'NOUN'),
+    ('book', 'kitap', 'I am reading a book.', 'NOUN')
+) AS v(source_text, target_text, example_sentence, word_type);
 
 -- --- Rusça kelime kartları (Temel Kelimeler / A1) ---
-INSERT INTO vocab_items (topic_id, source_text, target_text, example_sentence)
-SELECT t.id, v.source_text, v.target_text, v.example_sentence
+INSERT INTO vocab_items (topic_id, source_text, target_text, example_sentence, word_type)
+SELECT t.id, v.source_text, v.target_text, v.example_sentence, v.word_type
 FROM topics t
 JOIN languages l ON t.language_id = l.id AND l.code = 'ru' AND t.level = 'A1'
 CROSS JOIN (VALUES
-    ('яблоко', 'elma', 'Я ем яблоко каждое утро.'),
-    ('дом', 'ev', 'Это мой дом.'),
-    ('вода', 'su', 'Можно мне немного воды?'),
-    ('друг', 'arkadaş', 'Она моя лучшая подруга.'),
-    ('книга', 'kitap', 'Я читаю книгу.')
-) AS v(source_text, target_text, example_sentence);
+    ('яблоко', 'elma', 'Я ем яблоко каждое утро.', 'NOUN'),
+    ('дом', 'ev', 'Это мой дом.', 'NOUN'),
+    ('вода', 'su', 'Можно мне немного воды?', 'NOUN'),
+    ('друг', 'arkadaş', 'Она моя лучшая подруга.', 'NOUN'),
+    ('книга', 'kitap', 'Я читаю книгу.', 'NOUN')
+) AS v(source_text, target_text, example_sentence, word_type);
 
 -- --- İngilizce quiz soruları ---
 INSERT INTO quiz_questions (topic_id, question_text, correct_answer, option_2, option_3, option_4)

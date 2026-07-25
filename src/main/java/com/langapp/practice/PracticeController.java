@@ -1,10 +1,12 @@
 package com.langapp.practice;
 
+import com.langapp.content.ConjugationView;
 import com.langapp.content.VocabBrowseService;
 import com.langapp.content.VocabItem;
 import com.langapp.user.AppUserDetails;
 import com.langapp.user.User;
 import org.springframework.data.domain.Page;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -34,6 +36,14 @@ public class PracticeController {
         model.addAttribute("wordPage", result);
         model.addAttribute("search", search);
         return "practice/word-list";
+    }
+
+    @GetMapping("/words/{id}/conjugation")
+    @ResponseBody
+    public ResponseEntity<ConjugationView> getConjugation(@PathVariable Long id) {
+        return vocabBrowseService.getConjugation(id)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     // --- Flashcards ---

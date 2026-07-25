@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface VocabItemRepository extends JpaRepository<VocabItem, Long> {
     List<VocabItem> findByTopicId(Long topicId);
@@ -30,4 +31,11 @@ public interface VocabItemRepository extends JpaRepository<VocabItem, Long> {
     Page<VocabItem> searchByLanguage(@Param("languageCode") String languageCode,
                                       @Param("search") String search,
                                       Pageable pageable);
+
+    /**
+     * Cekim/aspect paneli icin: kelimeyi, esleşen fiiliyle (aspectPair) birlikte
+     * eager cekiyoruz. LEFT JOIN cunku aspectPair null olabilir.
+     */
+    @Query("SELECT v FROM VocabItem v LEFT JOIN FETCH v.aspectPair WHERE v.id = :id")
+    Optional<VocabItem> findWithAspectPairById(@Param("id") Long id);
 }

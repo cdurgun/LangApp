@@ -24,17 +24,40 @@
                 <tr style="text-align:left; border-bottom: 2px solid #eee;">
                     <th style="padding:8px;">Kelime</th>
                     <th style="padding:8px;">Karşılığı</th>
+                    <th style="padding:8px;">Tür</th>
                     <th style="padding:8px;">Örnek Cümle</th>
                     <th style="padding:8px;">Konu</th>
+                    <th style="padding:8px;"></th>
                 </tr>
             </thead>
             <tbody>
-                <tr th:each="item : ${wordPage.content}" style="border-bottom: 1px solid #f0f0f0;">
-                    <td style="padding:8px; font-weight:600;" th:text="${item.sourceText}"></td>
-                    <td style="padding:8px;" th:text="${item.targetText}"></td>
-                    <td style="padding:8px; color:#666;" th:text="${item.exampleSentence}"></td>
-                    <td style="padding:8px; color:#666;" th:text="${item.topic.name} + ' (' + ${item.topic.level} + ')'"></td>
-                </tr>
+                <th:block th:each="item : ${wordPage.content}">
+                    <tr style="border-bottom: 1px solid #f0f0f0;">
+                        <td style="padding:8px; font-weight:600;" th:text="${item.sourceText}"></td>
+                        <td style="padding:8px;" th:text="${item.targetText}"></td>
+                        <td style="padding:8px;">
+                            <span th:if="${item.wordType != null}" th:text="${item.wordType.turkishLabel}"
+                                  style="background:#eef0fb; padding:2px 8px; border-radius:10px; font-size:0.85rem;"></span>
+                        </td>
+                        <td style="padding:8px; color:#666;" th:text="${item.exampleSentence}"></td>
+                        <td style="padding:8px; color:#666;" th:text="${item.topic.name} + ' (' + ${item.topic.level} + ')'"></td>
+                        <td style="padding:8px;">
+                            <button th:if="${item.wordType != null and item.wordType.name() == 'VERB'}"
+                                    type="button"
+                                    class="link-button conjugation-toggle"
+                                    style="color:#2b2f77; text-decoration:underline; font-size:0.9rem;"
+                                    th:attr="onclick=|toggleConjugation(${item.id})|">
+                                Çekimleri Gör
+                            </button>
+                        </td>
+                    </tr>
+                    <tr th:if="${item.wordType != null and item.wordType.name() == 'VERB'}"
+                        th:id="'conj-row-' + ${item.id}" style="display:none; background:#fafbff;">
+                        <td colspan="6" style="padding:14px 8px;">
+                            <div th:id="'conj-content-' + ${item.id}" style="font-size:0.9rem; color:#666;">Yükleniyor...</div>
+                        </td>
+                    </tr>
+                </th:block>
             </tbody>
         </table>
 
@@ -57,5 +80,93 @@
         </div>
     </div>
 </div>
+
+<script>
+    const loadedConjugations = {};
+
+    function toggleConjugation(id) {
+        const row = document.getElementById('conj-row-' + id);
+        if (!row) return;
+
+        if (row.style.display === 'none') {
+            row.style.display = 'table-row';
+            if (!loadedConjugations[id]) {
+                loadConjugation(id);
+            }
+        } else {
+            row.style.display = 'none';
+        }
+    }
+
+    function loadConjugation(id) {
+        const contentDiv = document.getElementById('conj-content-' + id);
+        fetch('/practice/words/' + id + '/conjugation')
+            .then(res => {
+                if (!res.ok) throw new Error('Çekim bulunamadı');
+                return res.json();
+            })
+            .then(data => {
+                loadedConjugations[id] = true;
+                contentDiv.innerHTML = renderConjugationTable(data);
+            })
+            .catch(() => {
+                contentDiv.innerHTML = '<em>Bu fiil için çekim bilgisi henüz eklenmemiş.</em>';
+            });
+    }
+
+    function cell(value) {
+        return value ? value : '<span style="color:#bbb;">—</span>';
+    }
+
+    function renderConjugationTable(d) {
+        let aspectHtml = '';
+        if (d.aspect) {
+            const pairHtml = d.pairSourceText
+                ? `<strong>${d.pairSourceText}</strong> <span style="color:#666;">(${d.pairTargetText})</span>`
+                : '<span style="color:#bbb;">eşleşen fiil henüz eklenmemiş</span>';
+            aspectHtml = `
+                <div style="margin-bottom:14px; padding:10px 14px; background:#eef0fb; border-radius:8px;">
+                    <strong>Görünüş (Aspect):</strong> ${d.aspect}
+                    &nbsp;·&nbsp;
+                    <strong>${d.aspect === 'Bitmemiş' ? 'Bitmiş' : 'Bitmemiş'} karşılığı:</strong> ${pairHtml}
+                </div>
+            `;
+        }
+
+        return aspectHtml + `
+            <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:20px;">
+                <div>
+                    <strong>Şimdiki Zaman</strong>
+                    <table style="width:100%; margin-top:6px;">
+                        <tr><td>ben</td><td>${cell(d.present1s)}</td></tr>
+                        <tr><td>sen</td><td>${cell(d.present2s)}</td></tr>
+                        <tr><td>o</td><td>${cell(d.present3s)}</td></tr>
+                        <tr><td>biz</td><td>${cell(d.present1p)}</td></tr>
+                        <tr><td>siz</td><td>${cell(d.present2p)}</td></tr>
+                        <tr><td>onlar</td><td>${cell(d.present3p)}</td></tr>
+                    </table>
+                </div>
+                <div>
+                    <strong>Gelecek Zaman</strong>
+                    <table style="width:100%; margin-top:6px;">
+                        <tr><td>ben</td><td>${cell(d.future1s)}</td></tr>
+                        <tr><td>sen</td><td>${cell(d.future2s)}</td></tr>
+                        <tr><td>o</td><td>${cell(d.future3s)}</td></tr>
+                        <tr><td>biz</td><td>${cell(d.future1p)}</td></tr>
+                        <tr><td>siz</td><td>${cell(d.future2p)}</td></tr>
+                        <tr><td>onlar</td><td>${cell(d.future3p)}</td></tr>
+                    </table>
+                </div>
+                <div>
+                    <strong>Emir Kipi</strong>
+                    <table style="width:100%; margin-top:6px;">
+                        <tr><td>sen</td><td>${cell(d.imperativeSingular)}</td></tr>
+                        <tr><td>siz</td><td>${cell(d.imperativePlural)}</td></tr>
+                    </table>
+                </div>
+            </div>
+        `;
+    }
+</script>
 </body>
 </html>

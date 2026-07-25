@@ -30,4 +30,22 @@ public class VocabItem {
 
     @Column(name = "example_sentence")
     private String exampleSentence;
+
+    /** Kelimenin turu: isim, fiil, sifat vb. Mevcut kayitlarda null olabilir (geriye donuk uyumluluk). */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "word_type", length = 20)
+    private WordType wordType;
+
+    /** Sadece FIIL (VERB) kelimeler icin anlamli: bitmis mi bitmemis mi. */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "aspect", length = 20)
+    private VerbAspect aspect;
+
+    /**
+     * Bu fiilin diger gorunuse (aspect) sahip esi, orn. govorit' (bitmemis) <-> skazat' (bitmis).
+     * Kendine referans veren nullable iliski; karsilikli olarak iki tarafta da doldurulmasi beklenir.
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "aspect_pair_id")
+    private VocabItem aspectPair;
 }

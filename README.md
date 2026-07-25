@@ -21,16 +21,14 @@ GRANT ALL PRIVILEGES ON DATABASE langapp TO langapp_user;
 `src/main/resources/application.properties` içindeki bağlantı bilgilerini
 kendi ortamına göre güncelle (`spring.datasource.*`).
 
-### 2. Uygulamayı ilk kez çalıştır (tabloları otomatik oluşturması için)
+### 2. Uygulamayı çalıştır (Flyway tabloları otomatik oluşturur)
 ```bash
 mvn spring-boot:run
 ```
-`spring.jpa.hibernate.ddl-auto=update` ayarı sayesinde entity'lerden
-tablolar otomatik oluşur. Uygulamayı bir kez ayağa kaldırıp durdurman yeterli.
-
-> Not: Bu ayar sadece geliştirme içindir. Prod'a geçerken `validate`'e çevirip
-> şema değişikliklerini Flyway/Liquibase gibi bir migration aracıyla
-> yönetmeni öneririm.
+Artık şema `src/main/resources/db/migration/V1__init.sql` üzerinden Flyway
+tarafından yönetiliyor — uygulama ilk açılışta migration'ı otomatik uygular.
+İleride şema değişikliği gerektiğinde (yeni kolon/tablo) mevcut migration'ı
+değiştirme, `V2__aciklama.sql` gibi yeni bir dosya ekle.
 
 ### 3. Örnek içeriği yükle
 ```bash
@@ -57,6 +55,65 @@ com.langapp
 ├── practice     → PracticeService, AnswerCheckService (fuzzy match), PracticeController
 └── web          → AuthController, DashboardController
 ```
+
+> **Önemli — mevcut yerel veritabanın varsa:** Daha önce `ddl-auto=update` ile
+> oluşturulmuş bir yerel veritabanın varsa, Flyway "tablolar zaten var" diye
+> hata verecektir. En kolay çözüm: yerel `langapp` veritabanını silip
+> (`DROP DATABASE langapp;` ardından adım 1'i tekrar çalıştır) sıfırdan
+> başlamak. Mevcut verini korumak istiyorsan `flyway baseline` komutuna bak.
+
+## Canlıya Alma (Railway)
+
+Bu proje Docker ile paketlenmiş durumda (`Dockerfile` kök dizinde), Railway
+bunu otomatik algılayıp build eder.
+
+### 1. Railway'de proje oluştur
+- [railway.app](https://railway.app) üzerinde GitHub reponu bağlayarak yeni
+  proje oluştur (repo'yu önce GitHub'a push etmen gerekiyor).
+- Aynı projeye **"PostgreSQL"** servisini de ekle (Railway şablonlardan tek
+  tıkla ekliyor).
+
+### 2. Ortam değişkenlerini ayarla
+Uygulama servisinin **Variables** sekmesine şunları ekle (Railway'in servisler
+arası referans söz dizimini kullanarak, Postgres servisinin adının
+`Postgres` olduğunu varsayıyoruz — kendi servis adınla değiştir):
+
+```
+SPRING_DATASOURCE_URL=jdbc:postgresql://${{Postgres.PGHOST}}:${{Postgres.PGPORT}}/${{Postgres.PGDATABASE}}
+SPRING_DATASOURCE_USERNAME=${{Postgres.PGUSER}}
+SPRING_DATASOURCE_PASSWORD=${{Postgres.PGPASSWORD}}
+```
+
+`PORT` değişkenini Railway zaten otomatik atıyor, elle eklemene gerek yok —
+uygulama `server.port=${PORT:8080}` ile bunu otomatik okuyor.
+
+### 3. Deploy et
+Railway, `Dockerfile`'ı görüp otomatik build/deploy eder. İlk açılışta Flyway
+migration'ı (`V1__init.sql`) boş veritabanına uygular, tablolar oluşur.
+
+### 4. İçerik yükle
+Deploy sonrası `seed.sql` ve diğer içerik script'lerini Railway'in Postgres
+servisine karşı çalıştırman gerekiyor. Railway CLI ile:
+```bash
+railway link          # projeyi sec
+railway connect postgres   # psql oturumu acar
+```
+Açılan `psql` oturumunda `\i src/main/resources/db/seed.sql` gibi dosya
+içeriğini yapıştırıp çalıştırabilirsin (ya da içeriği kopyala-yapıştır yap).
+
+### 5. Health check (opsiyonel ama önerilir)
+Railway servis ayarlarında **Healthcheck Path**'i `/actuator/health` olarak
+ayarla — bu sayede Railway, uygulama gerçekten ayağa kalkmadan trafiği
+yönlendirmez.
+
+### Notlar
+- **Domain:** Railway sana `*.up.railway.app` uzantılı ücretsiz bir domain
+  verir; kendi domainini bağlamak istersen Settings → Networking'den
+  yapılandırabilirsin. HTTPS otomatik.
+- **Loglar:** Railway dashboard'unda servisin "Deployments" sekmesinden
+  canlı logları izleyebilirsin — hata ayıklamak için ilk bakılacak yer.
+- **Maliyet:** Hobby plan $5/ay taban ücret; bu küçük bir uygulama + Postgres
+  için genelde yeterli, aşımı olursa fatura o oranda artar.
 
 ## Sonraki Adımlar İçin Fikirler
 - Spaced repetition (SM-2 algoritması) — şu an basit mastery % kullanılıyor

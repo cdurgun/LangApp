@@ -1,22 +1,23 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{fragments/layout :: head('Giriş Yap')}"></head>
+<head th:replace="~{fragments/layout :: head(#{login.title})}"></head>
 <body>
+<div th:replace="~{fragments/layout :: navbar}"></div>
 <div class="container">
     <div class="card">
-        <h1>Giriş Yap</h1>
-        <p th:if="${param.error}" class="error">Kullanıcı adı veya şifre hatalı.</p>
-        <p th:if="${param.logout}" class="success">Başarıyla çıkış yaptınız.</p>
-        <p th:if="${param.registered}" class="success">Kayıt tamamlandı, şimdi giriş yapabilirsiniz.</p>
+        <h1 th:text="#{login.title}">Giriş Yap</h1>
+        <p th:if="${param.error}" class="error" th:text="#{login.error}"></p>
+        <p th:if="${param.logout}" class="success" th:text="#{login.logout.success}"></p>
+        <p th:if="${param.registered}" class="success" th:text="#{login.registered.success}"></p>
 
         <form th:action="@{/login}" method="post">
-            <label>Kullanıcı Adı</label>
+            <label th:text="#{login.username}">Kullanıcı Adı</label>
             <input type="text" name="username" required>
-            <label>Şifre</label>
+            <label th:text="#{login.password}">Şifre</label>
             <input type="password" name="password" required>
-            <button type="submit">Giriş Yap</button>
+            <button type="submit" th:text="#{login.submit}">Giriş Yap</button>
         </form>
-        <p>Hesabın yok mu? <a th:href="@{/register}">Kayıt ol</a></p>
+        <p><span th:text="#{login.noAccount}"></span> <a th:href="@{/register}" th:text="#{login.registerLink}">Kayıt ol</a></p>
     </div>
 </div>
 </body>

@@ -9,19 +9,5 @@ public enum WordType {
     PREPOSITION,   // edat/ilgeç
     CONJUNCTION,   // bağlaç
     NUMERAL,       // sayı
-    OTHER;         // diğer
-
-    public String getTurkishLabel() {
-        return switch (this) {
-            case NOUN -> "İsim";
-            case VERB -> "Fiil";
-            case ADJECTIVE -> "Sıfat";
-            case ADVERB -> "Zarf";
-            case PRONOUN -> "Zamir";
-            case PREPOSITION -> "Edat";
-            case CONJUNCTION -> "Bağlaç";
-            case NUMERAL -> "Sayı";
-            case OTHER -> "Diğer";
-        };
-    }
+    OTHER          // diğer
 }

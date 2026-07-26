@@ -1,25 +1,25 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{fragments/layout :: head('Çeviri Pratiği')}"></head>
+<head th:replace="~{fragments/layout :: head(#{translation.title})}"></head>
 <body>
 <div th:replace="~{fragments/layout :: navbar}"></div>
 <div class="container">
     <div class="card">
-        <h1>Çeviri Pratiği</h1>
+        <h1 th:text="#{translation.title}">Çeviri Pratiği</h1>
 
-        <p th:if="${result == 'dogru'}" class="success">Doğru kabul edildi! 🎉</p>
-        <p th:if="${result == 'yanlis'}" class="error">Tam tutmadı, tekrar dene.</p>
+        <p th:if="${result == 'dogru'}" class="success" th:text="#{translation.correct}">Doğru kabul edildi! 🎉</p>
+        <p th:if="${result == 'yanlis'}" class="error" th:text="#{translation.incorrect}">Tam tutmadı, tekrar dene.</p>
 
         <div th:if="${#lists.isEmpty(exercises)}">
-            <p>Bu dil için henüz çeviri alıştırması eklenmemiş.</p>
+            <p th:text="#{translation.empty}">Bu dil için henüz çeviri alıştırması eklenmemiş.</p>
         </div>
 
         <div th:unless="${#lists.isEmpty(exercises)}" th:with="ex=${exercises[0]}">
             <h2 th:text="${ex.sourceText}">Çevrilecek metin</h2>
-            <p th:if="${ex.hint}" style="color:#666;">İpucu: <span th:text="${ex.hint}"></span></p>
+            <p th:if="${ex.hint}" style="color:#666;"><span th:text="#{translation.hint}"></span> <span th:text="${ex.hint}"></span></p>
             <form th:action="@{'/practice/translation/' + ${ex.id} + '/answer'}" method="post">
-                <input type="text" name="userTranslation" placeholder="Çevirini yaz..." autocomplete="off" required>
-                <button type="submit">Gönder</button>
+                <input type="text" name="userTranslation" th:placeholder="#{translation.placeholder}" autocomplete="off" required>
+                <button type="submit" th:text="#{translation.submit}">Gönder</button>
             </form>
         </div>
     </div>

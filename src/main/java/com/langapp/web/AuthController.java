@@ -2,6 +2,8 @@ package com.langapp.web;
 
 import com.langapp.user.UserService;
 import jakarta.validation.Valid;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -13,9 +15,11 @@ import org.springframework.web.bind.annotation.PostMapping;
 public class AuthController {
 
     private final UserService userService;
+    private final MessageSource messageSource;
 
-    public AuthController(UserService userService) {
+    public AuthController(UserService userService, MessageSource messageSource) {
         this.userService = userService;
+        this.messageSource = messageSource;
     }
 
     @GetMapping("/login")
@@ -46,7 +50,10 @@ public class AuthController {
                     registerForm.getTargetLanguage()
             );
         } catch (IllegalArgumentException ex) {
-            model.addAttribute("errorMessage", ex.getMessage());
+            // UserService, hata mesaji yerine bir i18n anahtari firlatiyor (orn. "register.error.usernameTaken");
+            // burada kullanicinin diline gore cozumluyoruz.
+            String localizedMessage = messageSource.getMessage(ex.getMessage(), null, LocaleContextHolder.getLocale());
+            model.addAttribute("errorMessage", localizedMessage);
             return "register";
         }
         return "redirect:/login?registered";

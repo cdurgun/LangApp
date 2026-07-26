@@ -87,19 +87,72 @@ SPRING_DATASOURCE_PASSWORD=${{Postgres.PGPASSWORD}}
 `PORT` değişkenini Railway zaten otomatik atıyor, elle eklemene gerek yok —
 uygulama `server.port=${PORT:8080}` ile bunu otomatik okuyor.
 
+> ⚠️ **Railway UI bazen değişkenleri düzgün kaydetmeyebiliyor.** Dashboard'da
+> "kaydedildi" gibi görünüp servise hiç ulaşmadığı, açıklanmamış bir davranış
+> var — sonuç olarak uygulama sessizce `application.properties`'teki yerel
+> varsayılana (`localhost:5432`) düşüyor ve "Connection refused" hatası
+> alıyorsun. **Değişkenleri kaydettikten sonra mutlaka CLI ile doğrula:**
+> ```bash
+> railway variables --service LangApp | grep SPRING
+> ```
+> Üç satır da (`SPRING_DATASOURCE_URL/USERNAME/PASSWORD`) görünmüyorsa,
+> UI'ye güvenmeyip doğrudan CLI'dan set et:
+> ```bash
+> railway variables --service LangApp \
+>   --set 'SPRING_DATASOURCE_URL=jdbc:postgresql://${{Postgres.PGHOST}}:${{Postgres.PGPORT}}/${{Postgres.PGDATABASE}}' \
+>   --set 'SPRING_DATASOURCE_USERNAME=${{Postgres.PGUSER}}' \
+>   --set 'SPRING_DATASOURCE_PASSWORD=${{Postgres.PGPASSWORD}}'
+> ```
+> `${{...}}` kısımlarını mutlaka **tek tırnak** içinde bırak, yoksa terminal
+> kendi yorumlamaya çalışır. `LangApp` yerine kendi servis adını yaz.
+>
+> Ayrıca üç nokta menüsündeki **"Redeploy"**, o deployment'ın oluşturulduğu
+> andaki değişken anlık görüntüsünü (snapshot) tekrar kullanıyor — yeni
+> eklediğin değişkenleri yansıtmıyor. Değişken ekledikten/değiştirdikten
+> sonra her zaman **yeni bir deploy tetikle** (örn. `git commit --allow-empty
+> -m "trigger redeploy" && git push`), eski bir deployment'ı redeploy etme.
+
 ### 3. Deploy et
 Railway, `Dockerfile`'ı görüp otomatik build/deploy eder. İlk açılışta Flyway
 migration'ı (`V1__init.sql`) boş veritabanına uygular, tablolar oluşur.
 
 ### 4. İçerik yükle
 Deploy sonrası `seed.sql` ve diğer içerik script'lerini Railway'in Postgres
-servisine karşı çalıştırman gerekiyor. Railway CLI ile:
+servisine karşı çalıştırman gerekiyor. Proje kök dizinindeyken:
+
 ```bash
-railway link          # projeyi sec
-railway connect postgres   # psql oturumu acar
+railway connect Postgres
 ```
-Açılan `psql` oturumunda `\i src/main/resources/db/seed.sql` gibi dosya
-içeriğini yapıştırıp çalıştırabilirsin (ya da içeriği kopyala-yapıştır yap).
+
+(Postgres servisinin dashboard'daki adı farklıysa onu kullan.) Bu, yerel
+`psql`'ini Railway'in veritabanına bağlayarak interaktif bir oturum açar.
+Açılınca dosyaları **sırayla** çalıştır (sıra önemli — `seed.sql` önce
+gelmeli çünkü diğerleri onun oluşturduğu `languages`/`topics` kayıtlarına
+referans veriyor):
+
+```sql
+\i src/main/resources/db/seed.sql
+\i src/main/resources/db/seed_appearance.sql
+\i src/main/resources/db/seed_appearance_2.sql
+\i src/main/resources/db/seed_verbs.sql
+\i src/main/resources/db/seed_verb_aspects.sql
+```
+
+`update_word_types.sql`'i çalıştırmana gerek yok — o sadece `word_type`
+alanı eklenmeden önce girilmiş eski kayıtları geriye dönük güncellemek
+içindi; Railway'deki veritabanı sıfırdan kurulduğu için diğer seed
+dosyaları zaten bu alanı baştan doğru giriyor.
+
+Bitince çıkmak için `\q`.
+
+**Alternatif (interaktif oturum açmadan, tek tek):**
+```bash
+railway variables --service Postgres | grep DATABASE_PUBLIC_URL
+psql "<yukaridaki_url>" -f src/main/resources/db/seed.sql
+```
+Not: `DATABASE_PUBLIC_URL` dış bağlantı (TCP proxy) kullanır, hafif bir
+network-egress ücretine tabidir — birkaç script için önemsiz, ama sık
+kullanılacaksa `railway connect` (private network) daha uygun.
 
 ### 5. Health check (opsiyonel ama önerilir)
 Railway servis ayarlarında **Healthcheck Path**'i `/actuator/health` olarak
@@ -107,6 +160,16 @@ ayarla — bu sayede Railway, uygulama gerçekten ayağa kalkmadan trafiği
 yönlendirmez.
 
 ### Notlar
+- **Railway CLI kurulumu (macOS):** `brew install railway` (Homebrew yoksa
+  `npm i -g @railway/cli`). Kurulduktan sonra `railway login` ile giriş yap,
+  proje klasöründe `railway link` ile projeyi bağla.
+- **Service Variables vs Shared Variables:** Bu projede tek bir uygulama
+  servisi olduğu için değişkenler her zaman **Service Variables**'a
+  eklenmeli (Variables sekmesinde ilk gördüğün liste). Shared Variables,
+  birden fazla servisin aynı değeri paylaşacağı senaryolar için (örn. ileride
+  bir worker servisi eklenirse) — otomatik gelmiyor, her servisin ayrıca
+  subscribe olması gerekiyor, bu yüzden tek servisli kurulumda kullanmaya
+  gerek yok.
 - **Domain:** Railway sana `*.up.railway.app` uzantılı ücretsiz bir domain
   verir; kendi domainini bağlamak istersen Settings → Networking'den
   yapılandırabilirsin. HTTPS otomatik.

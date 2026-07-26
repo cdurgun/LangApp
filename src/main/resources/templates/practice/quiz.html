@@ -1,17 +1,17 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{fragments/layout :: head('Quiz')}"></head>
+<head th:replace="~{fragments/layout :: head(#{quiz.title})}"></head>
 <body>
 <div th:replace="~{fragments/layout :: navbar}"></div>
 <div class="container">
     <div class="card">
-        <h1>Quiz</h1>
+        <h1 th:text="#{quiz.title}">Quiz</h1>
 
-        <p th:if="${result == 'dogru'}" class="success">Doğru cevap! 🎉</p>
-        <p th:if="${result == 'yanlis'}" class="error">Yanlış, tekrar dene.</p>
+        <p th:if="${result == 'dogru'}" class="success" th:text="#{quiz.correct}">Doğru cevap! 🎉</p>
+        <p th:if="${result == 'yanlis'}" class="error" th:text="#{quiz.incorrect}">Yanlış, tekrar dene.</p>
 
         <div th:if="${#lists.isEmpty(questions)}">
-            <p>Bu dil için henüz soru eklenmemiş.</p>
+            <p th:text="#{quiz.empty}">Bu dil için henüz soru eklenmemiş.</p>
         </div>
 
         <div th:unless="${#lists.isEmpty(questions)}" th:with="q=${questions[0]}">

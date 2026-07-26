@@ -33,10 +33,10 @@ public class UserService implements UserDetailsService {
     @Transactional
     public User register(String username, String email, String rawPassword, String targetLanguage) {
         if (userRepository.existsByUsername(username)) {
-            throw new IllegalArgumentException("Bu kullanici adi zaten alinmis.");
+            throw new IllegalArgumentException("register.error.usernameTaken");
         }
         if (userRepository.existsByEmail(email)) {
-            throw new IllegalArgumentException("Bu e-posta zaten kayitli.");
+            throw new IllegalArgumentException("register.error.emailTaken");
         }
         User user = new User(username, email, passwordEncoder.encode(rawPassword), targetLanguage);
         return userRepository.save(user);

@@ -9,14 +9,26 @@
 <nav th:fragment="navbar" class="navbar">
     <a th:href="@{/dashboard}" class="brand">LangApp</a>
     <div class="nav-links" sec:authorize="isAuthenticated()" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
-        <a th:href="@{/dashboard}">Panel</a>
-        <a th:href="@{/practice/words}">Kelime Listesi</a>
-        <a th:href="@{/practice/flashcards}">Kelime Kartları</a>
-        <a th:href="@{/practice/quiz}">Quiz</a>
-        <a th:href="@{/practice/translation}">Çeviri</a>
+        <a th:href="@{/dashboard}" th:text="#{nav.dashboard}">Panel</a>
+        <a th:href="@{/practice/words}" th:text="#{nav.wordlist}">Kelime Listesi</a>
+        <a th:href="@{/practice/flashcards}" th:text="#{nav.flashcards}">Kelime Kartları</a>
+        <a th:href="@{/practice/quiz}" th:text="#{nav.quiz}">Quiz</a>
+        <a th:href="@{/practice/translation}" th:text="#{nav.translation}">Çeviri</a>
         <form th:action="@{/logout}" method="post" style="display:inline">
-            <button type="submit" class="link-button">Çıkış</button>
+            <button type="submit" class="link-button" th:text="#{nav.logout}">Çıkış</button>
         </form>
+        <span class="lang-switch">
+            <a href="?lang=tr" title="Türkçe">TR</a>
+            <span>·</span>
+            <a href="?lang=en" title="English">EN</a>
+        </span>
+    </div>
+    <div class="nav-links" sec:authorize="!isAuthenticated()" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+        <span class="lang-switch">
+            <a href="?lang=tr" title="Türkçe">TR</a>
+            <span>·</span>
+            <a href="?lang=en" title="English">EN</a>
+        </span>
     </div>
 </nav>
 </body>

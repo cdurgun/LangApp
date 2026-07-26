@@ -10,18 +10,18 @@ import lombok.Setter;
 @Setter
 public class RegisterForm {
 
-    @NotBlank(message = "Kullanici adi bos olamaz")
-    @Size(min = 3, max = 50, message = "Kullanici adi 3-50 karakter olmali")
+    @NotBlank(message = "{register.error.usernameBlank}")
+    @Size(min = 3, max = 50, message = "{register.error.usernameSize}")
     private String username;
 
-    @NotBlank(message = "E-posta bos olamaz")
-    @Email(message = "Gecerli bir e-posta girin")
+    @NotBlank(message = "{register.error.emailBlank}")
+    @Email(message = "{register.error.emailInvalid}")
     private String email;
 
-    @NotBlank(message = "Sifre bos olamaz")
-    @Size(min = 6, message = "Sifre en az 6 karakter olmali")
+    @NotBlank(message = "{register.error.passwordBlank}")
+    @Size(min = 6, message = "{register.error.passwordSize}")
     private String password;
 
-    @NotBlank(message = "Hedef dil secin")
+    @NotBlank(message = "{register.error.languageBlank}")
     private String targetLanguage;
 }

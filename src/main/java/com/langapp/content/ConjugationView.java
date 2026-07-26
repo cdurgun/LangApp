@@ -7,14 +7,14 @@ public record ConjugationView(
         String future1s, String future2s, String future3s,
         String future1p, String future2p, String future3p,
         String imperativeSingular, String imperativePlural,
-        String aspect,
+        String aspectCode,   // "IMPERFECTIVE" / "PERFECTIVE" - JS'in dilden bagimsiz karar vermesi icin
+        String aspectLabel,  // kullanicinin diline gore cevrilmis etiket (JS'te sadece gosterim icin)
         String pairSourceText,
         String pairTargetText,
         Long pairId
 ) {
     /** Cekim kaydi yoksa (henuz eklenmemisse) tum cekim alanlari icin null geçilebilir. */
-    public static ConjugationView build(VerbConjugation vc, VocabItem item) {
-        String aspectLabel = item.getAspect() != null ? item.getAspect().getTurkishLabel() : null;
+    public static ConjugationView build(VerbConjugation vc, VocabItem item, String aspectLabel) {
         VocabItem pair = item.getAspectPair();
 
         return new ConjugationView(
@@ -32,6 +32,7 @@ public record ConjugationView(
                 vc != null ? vc.getFuture3p() : null,
                 vc != null ? vc.getImperativeSingular() : null,
                 vc != null ? vc.getImperativePlural() : null,
+                item.getAspect() != null ? item.getAspect().name() : null,
                 aspectLabel,
                 pair != null ? pair.getSourceText() : null,
                 pair != null ? pair.getTargetText() : null,

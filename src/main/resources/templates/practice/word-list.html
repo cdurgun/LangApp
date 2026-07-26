@@ -1,32 +1,32 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{fragments/layout :: head('Kelime Listesi')}"></head>
+<head th:replace="~{fragments/layout :: head(#{wordlist.title})}"></head>
 <body>
 <div th:replace="~{fragments/layout :: navbar}"></div>
 <div class="container">
     <div class="card">
-        <h1>Kelime Listesi</h1>
+        <h1 th:text="#{wordlist.title}">Kelime Listesi</h1>
 
         <form th:action="@{/practice/words}" method="get" style="display:flex; gap:10px; align-items:flex-start;">
-            <input type="text" name="search" th:value="${search}" placeholder="Kelime ara..." autocomplete="off" style="margin:0;">
-            <button type="submit" style="white-space:nowrap;">Ara</button>
-            <a th:if="${search != null and !search.isEmpty()}" th:href="@{/practice/words}" class="btn" style="background:#888; white-space:nowrap;">Temizle</a>
+            <input type="text" name="search" th:value="${search}" th:placeholder="#{wordlist.searchPlaceholder}" autocomplete="off" style="margin:0;">
+            <button type="submit" style="white-space:nowrap;" th:text="#{wordlist.search}">Ara</button>
+            <a th:if="${search != null and !search.isEmpty()}" th:href="@{/practice/words}" class="btn" style="background:#888; white-space:nowrap;" th:text="#{wordlist.clear}">Temizle</a>
         </form>
 
-        <p style="color:#666; margin-top:10px;" th:text="${wordPage.totalElements} + ' kelime bulundu'"></p>
+        <p style="color:#666; margin-top:10px;" th:text="#{wordlist.resultsCount(${wordPage.totalElements})}"></p>
 
         <div th:if="${wordPage.empty}">
-            <p>Sonuç bulunamadı.</p>
+            <p th:text="#{wordlist.empty}">Sonuç bulunamadı.</p>
         </div>
 
         <table th:unless="${wordPage.empty}" style="width:100%; border-collapse: collapse; margin-top:10px;">
             <thead>
                 <tr style="text-align:left; border-bottom: 2px solid #eee;">
-                    <th style="padding:8px;">Kelime</th>
-                    <th style="padding:8px;">Karşılığı</th>
-                    <th style="padding:8px;">Tür</th>
-                    <th style="padding:8px;">Örnek Cümle</th>
-                    <th style="padding:8px;">Konu</th>
+                    <th style="padding:8px;" th:text="#{wordlist.col.word}">Kelime</th>
+                    <th style="padding:8px;" th:text="#{wordlist.col.translation}">Karşılığı</th>
+                    <th style="padding:8px;" th:text="#{wordlist.col.type}">Tür</th>
+                    <th style="padding:8px;" th:text="#{wordlist.col.example}">Örnek Cümle</th>
+                    <th style="padding:8px;" th:text="#{wordlist.col.topic}">Konu</th>
                     <th style="padding:8px;"></th>
                 </tr>
             </thead>
@@ -36,7 +36,7 @@
                         <td style="padding:8px; font-weight:600;" th:text="${item.sourceText}"></td>
                         <td style="padding:8px;" th:text="${item.targetText}"></td>
                         <td style="padding:8px;">
-                            <span th:if="${item.wordType != null}" th:text="${item.wordType.turkishLabel}"
+                            <span th:if="${item.wordType != null}" th:text="#{${'wordtype.' + item.wordType}}"
                                   style="background:#eef0fb; padding:2px 8px; border-radius:10px; font-size:0.85rem;"></span>
                         </td>
                         <td style="padding:8px; color:#666;" th:text="${item.exampleSentence}"></td>
@@ -46,7 +46,8 @@
                                     type="button"
                                     class="link-button conjugation-toggle"
                                     style="color:#2b2f77; text-decoration:underline; font-size:0.9rem;"
-                                    th:attr="onclick=|toggleConjugation(${item.id})|">
+                                    th:attr="onclick=|toggleConjugation(${item.id})|"
+                                    th:text="#{wordlist.viewConjugation}">
                                 Çekimleri Gör
                             </button>
                         </td>
@@ -54,7 +55,7 @@
                     <tr th:if="${item.wordType != null and item.wordType.name() == 'VERB'}"
                         th:id="'conj-row-' + ${item.id}" style="display:none; background:#fafbff;">
                         <td colspan="6" style="padding:14px 8px;">
-                            <div th:id="'conj-content-' + ${item.id}" style="font-size:0.9rem; color:#666;">Yükleniyor...</div>
+                            <div th:id="'conj-content-' + ${item.id}" style="font-size:0.9rem; color:#666;">...</div>
                         </td>
                     </tr>
                 </th:block>
@@ -65,7 +66,7 @@
         <div th:if="${wordPage.totalPages > 1}" style="margin-top:20px; display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
             <a th:if="${wordPage.hasPrevious()}"
                th:href="@{/practice/words(page=${wordPage.number - 1}, search=${search})}"
-               class="btn">&laquo; Önceki</a>
+               class="btn" th:text="#{wordlist.prev}">&laquo; Önceki</a>
 
             <span th:each="i : ${#numbers.sequence(0, wordPage.totalPages - 1)}">
                 <a th:href="@{/practice/words(page=${i}, search=${search})}"
@@ -76,13 +77,33 @@
 
             <a th:if="${wordPage.hasNext()}"
                th:href="@{/practice/words(page=${wordPage.number + 1}, search=${search})}"
-               class="btn">Sonraki &raquo;</a>
+               class="btn" th:text="#{wordlist.next}">Sonraki &raquo;</a>
         </div>
     </div>
 </div>
 
-<script>
+<script th:inline="javascript">
     const loadedConjugations = {};
+
+    // Sunucudan gelen mesaj anahtarlarini JS'e tasiyoruz - boylece cekim
+    // panelindeki metinler de aktif dile gore degisiyor.
+    const i18n = {
+        pairToPerfective: /*[[#{conjugation.pairToPerfective}]]*/ 'Bitmiş karşılığı:',
+        pairToImperfective: /*[[#{conjugation.pairToImperfective}]]*/ 'Bitmemiş karşılığı:',
+        pairMissing: /*[[#{conjugation.pairMissing}]]*/ 'eşleşen fiil henüz eklenmemiş',
+        aspectLabel: /*[[#{conjugation.aspectLabel}]]*/ 'Görünüş (Aspect):',
+        present: /*[[#{conjugation.present}]]*/ 'Şimdiki Zaman',
+        future: /*[[#{conjugation.future}]]*/ 'Gelecek Zaman',
+        imperative: /*[[#{conjugation.imperative}]]*/ 'Emir Kipi',
+        notAvailable: /*[[#{conjugation.notAvailable}]]*/ 'Bu fiil için çekim bilgisi henüz eklenmemiş.',
+        dash: /*[[#{conjugation.dash}]]*/ '—',
+        pronoun1s: /*[[#{pronoun.1s}]]*/ 'ben',
+        pronoun2s: /*[[#{pronoun.2s}]]*/ 'sen',
+        pronoun3s: /*[[#{pronoun.3s}]]*/ 'o',
+        pronoun1p: /*[[#{pronoun.1p}]]*/ 'biz',
+        pronoun2p: /*[[#{pronoun.2p}]]*/ 'siz',
+        pronoun3p: /*[[#{pronoun.3p}]]*/ 'onlar'
+    };
 
     function toggleConjugation(id) {
         const row = document.getElementById('conj-row-' + id);
@@ -102,7 +123,7 @@
         const contentDiv = document.getElementById('conj-content-' + id);
         fetch('/practice/words/' + id + '/conjugation')
             .then(res => {
-                if (!res.ok) throw new Error('Çekim bulunamadı');
+                if (!res.ok) throw new Error('not found');
                 return res.json();
             })
             .then(data => {
@@ -110,25 +131,26 @@
                 contentDiv.innerHTML = renderConjugationTable(data);
             })
             .catch(() => {
-                contentDiv.innerHTML = '<em>Bu fiil için çekim bilgisi henüz eklenmemiş.</em>';
+                contentDiv.innerHTML = '<em>' + i18n.notAvailable + '</em>';
             });
     }
 
     function cell(value) {
-        return value ? value : '<span style="color:#bbb;">—</span>';
+        return value ? value : '<span style="color:#bbb;">' + i18n.dash + '</span>';
     }
 
     function renderConjugationTable(d) {
         let aspectHtml = '';
-        if (d.aspect) {
+        if (d.aspectLabel) {
             const pairHtml = d.pairSourceText
                 ? `<strong>${d.pairSourceText}</strong> <span style="color:#666;">(${d.pairTargetText})</span>`
-                : '<span style="color:#bbb;">eşleşen fiil henüz eklenmemiş</span>';
+                : '<span style="color:#bbb;">' + i18n.pairMissing + '</span>';
+            const pairLabel = d.aspectCode === 'IMPERFECTIVE' ? i18n.pairToPerfective : i18n.pairToImperfective;
             aspectHtml = `
                 <div style="margin-bottom:14px; padding:10px 14px; background:#eef0fb; border-radius:8px;">
-                    <strong>Görünüş (Aspect):</strong> ${d.aspect}
+                    <strong>${i18n.aspectLabel}</strong> ${d.aspectLabel}
                     &nbsp;·&nbsp;
-                    <strong>${d.aspect === 'Bitmemiş' ? 'Bitmiş' : 'Bitmemiş'} karşılığı:</strong> ${pairHtml}
+                    <strong>${pairLabel}</strong> ${pairHtml}
                 </div>
             `;
         }
@@ -136,32 +158,32 @@
         return aspectHtml + `
             <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:20px;">
                 <div>
-                    <strong>Şimdiki Zaman</strong>
+                    <strong>${i18n.present}</strong>
                     <table style="width:100%; margin-top:6px;">
-                        <tr><td>ben</td><td>${cell(d.present1s)}</td></tr>
-                        <tr><td>sen</td><td>${cell(d.present2s)}</td></tr>
-                        <tr><td>o</td><td>${cell(d.present3s)}</td></tr>
-                        <tr><td>biz</td><td>${cell(d.present1p)}</td></tr>
-                        <tr><td>siz</td><td>${cell(d.present2p)}</td></tr>
-                        <tr><td>onlar</td><td>${cell(d.present3p)}</td></tr>
+                        <tr><td>${i18n.pronoun1s}</td><td>${cell(d.present1s)}</td></tr>
+                        <tr><td>${i18n.pronoun2s}</td><td>${cell(d.present2s)}</td></tr>
+                        <tr><td>${i18n.pronoun3s}</td><td>${cell(d.present3s)}</td></tr>
+                        <tr><td>${i18n.pronoun1p}</td><td>${cell(d.present1p)}</td></tr>
+                        <tr><td>${i18n.pronoun2p}</td><td>${cell(d.present2p)}</td></tr>
+                        <tr><td>${i18n.pronoun3p}</td><td>${cell(d.present3p)}</td></tr>
                     </table>
                 </div>
                 <div>
-                    <strong>Gelecek Zaman</strong>
+                    <strong>${i18n.future}</strong>
                     <table style="width:100%; margin-top:6px;">
-                        <tr><td>ben</td><td>${cell(d.future1s)}</td></tr>
-                        <tr><td>sen</td><td>${cell(d.future2s)}</td></tr>
-                        <tr><td>o</td><td>${cell(d.future3s)}</td></tr>
-                        <tr><td>biz</td><td>${cell(d.future1p)}</td></tr>
-                        <tr><td>siz</td><td>${cell(d.future2p)}</td></tr>
-                        <tr><td>onlar</td><td>${cell(d.future3p)}</td></tr>
+                        <tr><td>${i18n.pronoun1s}</td><td>${cell(d.future1s)}</td></tr>
+                        <tr><td>${i18n.pronoun2s}</td><td>${cell(d.future2s)}</td></tr>
+                        <tr><td>${i18n.pronoun3s}</td><td>${cell(d.future3s)}</td></tr>
+                        <tr><td>${i18n.pronoun1p}</td><td>${cell(d.future1p)}</td></tr>
+                        <tr><td>${i18n.pronoun2p}</td><td>${cell(d.future2p)}</td></tr>
+                        <tr><td>${i18n.pronoun3p}</td><td>${cell(d.future3p)}</td></tr>
                     </table>
                 </div>
                 <div>
-                    <strong>Emir Kipi</strong>
+                    <strong>${i18n.imperative}</strong>
                     <table style="width:100%; margin-top:6px;">
-                        <tr><td>sen</td><td>${cell(d.imperativeSingular)}</td></tr>
-                        <tr><td>siz</td><td>${cell(d.imperativePlural)}</td></tr>
+                        <tr><td>${i18n.pronoun2s}</td><td>${cell(d.imperativeSingular)}</td></tr>
+                        <tr><td>${i18n.pronoun2p}</td><td>${cell(d.imperativePlural)}</td></tr>
                     </table>
                 </div>
             </div>

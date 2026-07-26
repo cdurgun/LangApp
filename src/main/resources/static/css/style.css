@@ -20,6 +20,10 @@ body {
     background: none; border: none; color: #dfe1ff; cursor: pointer;
     font-size: 1rem; margin-left: 20px; padding: 0;
 }
+.lang-switch { margin-left: 20px; }
+.lang-switch a { color: #dfe1ff; text-decoration: none; font-size: 0.9rem; }
+.lang-switch a:hover { color: #fff; text-decoration: underline; }
+.lang-switch span { color: #6b70b8; margin: 0 4px; }
 .container { max-width: 760px; margin: 40px auto; padding: 0 20px; }
 .card {
     background: #fff; border-radius: 12px; padding: 28px;

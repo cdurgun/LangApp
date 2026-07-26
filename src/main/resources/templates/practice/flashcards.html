@@ -1,23 +1,23 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{fragments/layout :: head('Kelime Kartları')}"></head>
+<head th:replace="~{fragments/layout :: head(#{flashcards.title})}"></head>
 <body>
 <div th:replace="~{fragments/layout :: navbar}"></div>
 <div class="container">
     <div class="card">
-        <h1>Kelime Kartları</h1>
+        <h1 th:text="#{flashcards.title}">Kelime Kartları</h1>
 
         <div th:if="${#lists.isEmpty(flashcards)}">
-            <p>Bu dil için henüz kelime eklenmemiş.</p>
+            <p th:text="#{flashcards.empty}">Bu dil için henüz kelime eklenmemiş.</p>
         </div>
 
         <div th:unless="${#lists.isEmpty(flashcards)}">
             <div id="flashcard-area">
-                <div class="flashcard" id="card-text">Yükleniyor...</div>
-                <button id="flip-btn" onclick="flipCard()">Çeviriyi Göster</button>
+                <div class="flashcard" id="card-text">...</div>
+                <button id="flip-btn" onclick="flipCard()" th:text="#{flashcards.flip}">Çeviriyi Göster</button>
                 <div id="assess-buttons" style="display:none; margin-top:14px;">
-                    <button onclick="assess(true)">Biliyordum ✓</button>
-                    <button onclick="assess(false)" style="background:#c0392b; margin-left:10px;">Bilmiyordum ✗</button>
+                    <button onclick="assess(true)" th:text="#{flashcards.knew}">Biliyordum ✓</button>
+                    <button onclick="assess(false)" style="background:#c0392b; margin-left:10px;" th:text="#{flashcards.didntKnow}">Bilmiyordum ✗</button>
                 </div>
                 <p id="progress-text" style="margin-top:16px; color:#666;"></p>
             </div>
@@ -27,12 +27,13 @@
 
 <script th:inline="javascript">
     const cards = /*[[${flashcards}]]*/ [];
+    const doneText = /*[[#{flashcards.done}]]*/ 'Tüm kartları bitirdin! 🎉';
     let index = 0;
     let flipped = false;
 
     function renderCard() {
         if (index >= cards.length) {
-            document.getElementById('card-text').innerText = 'Tüm kartları bitirdin! 🎉';
+            document.getElementById('card-text').innerText = doneText;
             document.getElementById('flip-btn').style.display = 'none';
             document.getElementById('assess-buttons').style.display = 'none';
             document.getElementById('progress-text').innerText = '';

@@ -28,7 +28,7 @@ mvn spring-boot:run
 The schema is now managed by Flyway via
 `src/main/resources/db/migration/V1__init.sql` — the app applies the
 migration automatically on first startup. When you need a future schema
-change (new column/table), don't edit the existing migration — add a new
+change (new column/table), don't edit an existing migration — add a new
 file like `V2__description.sql` instead.
 
 ### 3. Load sample content
@@ -49,11 +49,12 @@ Go to `http://localhost:8080` in your browser, register via `/register`
 ## Project Structure
 ```
 com.langapp
-├── config       → SecurityConfig (form login, session-based auth)
+├── config       → SecurityConfig (form login, session-based auth), LocaleConfig (language switching)
 ├── user         → User entity, registration/login, streak tracking
 ├── content      → Language, Topic, VocabItem, QuizQuestion, TranslationExercise
 ├── progress     → UserProgress (mastery %), Attempt (attempt log)
 ├── practice     → PracticeService, AnswerCheckService (fuzzy match), PracticeController
+├── admin        → Admin word management (add/delete words via /admin/words)
 └── web          → AuthController, DashboardController
 ```
 
@@ -119,8 +120,8 @@ and the app already reads it via `server.port=${PORT:8080}`.
 
 ### 3. Deploy
 Railway detects the `Dockerfile` and builds/deploys automatically. On first
-boot, Flyway applies the migration (`V1__init.sql`) to the empty database,
-creating all the tables.
+boot, Flyway applies the migrations (`V1__init.sql`, `V2__add_admin_flag.sql`)
+to the empty database, creating all the tables.
 
 ### 4. Load content
 After deploying, you need to run `seed.sql` and the other content scripts
@@ -187,10 +188,29 @@ it's actually up.
   for an app this size plus Postgres, and your bill scales up from there if
   you go over.
 
+## Admin — Word Management
+
+Words can now be added through the `/admin/words` screen without needing a
+SQL script (the existing seed scripts are still valid for bulk-loading
+content — both approaches can be used together).
+
+This screen is only accessible to admin users. To make yourself an admin
+(after the migrations have run, i.e. after starting the app at least once):
+
+```sql
+UPDATE users SET is_admin = true WHERE username = 'your_username';
+```
+
+You may need to log in again after running this (permissions on an
+existing session aren't refreshed automatically). Once logged in, you
+should see an "Admin" link in the navbar.
+
 ## Ideas for Next Steps
 - Spaced repetition (SM-2 algorithm) — currently uses a simple mastery %
 - Audio pronunciation (VocabItem already has an `audio_url` field ready; a
   file/service could be wired up)
 - Turn quizzes into an "N-question session" flow (currently shows one
   random question at a time)
-- An admin panel for content management (currently manual SQL/CSV loading)
+- Editing existing words from the admin screen (currently add/delete only)
+- Managing topics from the admin screen (currently topics are still
+  created via SQL)

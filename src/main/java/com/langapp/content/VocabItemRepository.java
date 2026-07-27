@@ -38,4 +38,15 @@ public interface VocabItemRepository extends JpaRepository<VocabItem, Long> {
      */
     @Query("SELECT v FROM VocabItem v LEFT JOIN FETCH v.aspectPair WHERE v.id = :id")
     Optional<VocabItem> findWithAspectPairById(@Param("id") Long id);
+
+    /** Admin listesi icin: tum kelimeleri konu+dil bilgisiyle birlikte, dil/konu/kelime sirali doner. */
+    @Query("SELECT v FROM VocabItem v JOIN FETCH v.topic t JOIN FETCH t.language " +
+            "ORDER BY t.language.code, t.name, v.sourceText")
+    List<VocabItem> findAllWithTopicAndLanguage();
+
+    /** Aspect eslesmesi (fiil cifti) secimi icin mevcut fiillerin listesi. */
+    List<VocabItem> findByWordType(WordType wordType);
+
+    /** Silme sirasinda: bu kelimeye aspect_pair_id ile isaret eden baska kayit var mi kontrolu. */
+    List<VocabItem> findByAspectPairId(Long aspectPairId);
 }

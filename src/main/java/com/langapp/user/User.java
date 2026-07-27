@@ -45,6 +45,9 @@ public class User {
     @Column(name = "last_active_date")
     private LocalDate lastActiveDate;
 
+    @Column(name = "is_admin", nullable = false)
+    private boolean admin = false;
+
     public User(String username, String email, String passwordHash, String targetLanguage) {
         this.username = username;
         this.email = email;

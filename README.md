@@ -178,6 +178,24 @@ yönlendirmez.
 - **Maliyet:** Hobby plan $5/ay taban ücret; bu küçük bir uygulama + Postgres
   için genelde yeterli, aşımı olursa fatura o oranda artar.
 
+## Admin — Kelime Yönetimi
+
+Kelimeler artık SQL script'i gerektirmeden `/admin/words` ekranından
+eklenebiliyor (mevcut seed script'leri hâlâ toplu içerik yüklemek için
+geçerli — ikisi bir arada kullanılabilir).
+
+Bu ekran sadece admin yetkili kullanıcılara açık. Kendini admin yapmak için
+(migration'lar çalıştıktan sonra, yani uygulamayı en az bir kez
+başlattıktan sonra):
+
+```sql
+UPDATE users SET is_admin = true WHERE username = 'kullanici_adin';
+```
+
+Bunu çalıştırdıktan sonra tekrar giriş yapman gerekebilir (mevcut
+session'daki yetkiler güncellenmez). Giriş yaptığında navbar'da bir
+"Yönetim" linki görmelisin.
+
 ## Sonraki Adımlar İçin Fikirler
 - Spaced repetition (SM-2 algoritması) — şu an basit mastery % kullanılıyor
 - Sesli telaffuz (audio_url alanı VocabItem'da hazır, dosya/servis eklenebilir)

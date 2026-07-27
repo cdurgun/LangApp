@@ -14,6 +14,7 @@
         <a th:href="@{/practice/flashcards}" th:text="#{nav.flashcards}">Kelime Kartları</a>
         <a th:href="@{/practice/quiz}" th:text="#{nav.quiz}">Quiz</a>
         <a th:href="@{/practice/translation}" th:text="#{nav.translation}">Çeviri</a>
+        <a th:href="@{/admin/words}" th:text="#{nav.admin}" sec:authorize="hasRole('ADMIN')" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">Yönetim</a>
         <form th:action="@{/logout}" method="post" style="display:inline">
             <button type="submit" class="link-button" th:text="#{nav.logout}">Çıkış</button>
         </form>

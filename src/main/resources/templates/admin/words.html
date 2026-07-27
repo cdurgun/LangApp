@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(#{admin.words.title})}"></head>
+<body>
+<div th:replace="~{fragments/layout :: navbar}"></div>
+<div class="container" style="max-width: 1000px;">
+
+    <div class="card">
+        <h1 th:text="#{admin.words.title}">Kelime Yönetimi</h1>
+        <p th:if="${param.added}" class="success" th:text="#{admin.words.added}"></p>
+        <p th:if="${param.deleted}" class="success" th:text="#{admin.words.deleted}"></p>
+    </div>
+
+    <div class="card">
+        <h2 th:text="#{admin.words.addTitle}">Yeni Kelime Ekle</h2>
+        <form th:action="@{/admin/words}" th:object="${wordForm}" method="post">
+            <label th:text="#{admin.words.topic}">Konu</label>
+            <select th:field="*{topicId}">
+                <option th:each="t : ${topics}" th:value="${t.id}"
+                        th:text="${t.language.code} + ' — ' + ${t.name} + ' (' + ${t.level} + ')'"></option>
+            </select>
+            <span class="error" th:if="${#fields.hasErrors('topicId')}" th:errors="*{topicId}"></span>
+
+            <label th:text="#{admin.words.sourceText}">Kelime</label>
+            <input type="text" th:field="*{sourceText}">
+            <span class="error" th:if="${#fields.hasErrors('sourceText')}" th:errors="*{sourceText}"></span>
+
+            <label th:text="#{admin.words.targetText}">Karşılığı</label>
+            <input type="text" th:field="*{targetText}">
+            <span class="error" th:if="${#fields.hasErrors('targetText')}" th:errors="*{targetText}"></span>
+
+            <label th:text="#{admin.words.exampleSentence}">Örnek Cümle (opsiyonel)</label>
+            <input type="text" th:field="*{exampleSentence}">
+
+            <label th:text="#{admin.words.wordType}">Tür (opsiyonel)</label>
+            <select th:field="*{wordType}">
+                <option value="" th:text="#{admin.words.selectType}">-- Seçiniz --</option>
+                <option th:each="wt : ${wordTypes}" th:value="${wt.name()}" th:text="#{${'wordtype.' + wt}}"></option>
+            </select>
+
+            <label th:text="#{admin.words.aspect}">Görünüş (opsiyonel, sadece fiil)</label>
+            <select th:field="*{aspect}">
+                <option value="" th:text="#{admin.words.selectType}">-- Seçiniz --</option>
+                <option th:each="a : ${aspects}" th:value="${a.name()}" th:text="#{${'aspect.' + a}}"></option>
+            </select>
+
+            <label th:text="#{admin.words.pair}">Eşleşen Fiil (opsiyonel)</label>
+            <select th:field="*{pairId}">
+                <option value="" th:text="#{admin.words.selectPair}">-- Yok --</option>
+                <option th:each="v : ${verbs}" th:value="${v.id}" th:text="${v.sourceText} + ' (' + ${v.targetText} + ')'"></option>
+            </select>
+
+            <button type="submit" th:text="#{admin.words.submit}" style="margin-top:16px;">Ekle</button>
+        </form>
+    </div>
+
+    <div class="card">
+        <h2 th:text="#{admin.words.listTitle}">Mevcut Kelimeler</h2>
+        <table style="width:100%; border-collapse: collapse; margin-top:10px;">
+            <thead>
+                <tr style="text-align:left; border-bottom: 2px solid #eee;">
+                    <th style="padding:8px;" th:text="#{admin.words.col.language}">Dil</th>
+                    <th style="padding:8px;" th:text="#{admin.words.col.topic}">Konu</th>
+                    <th style="padding:8px;" th:text="#{admin.words.col.word}">Kelime</th>
+                    <th style="padding:8px;" th:text="#{admin.words.col.translation}">Karşılığı</th>
+                    <th style="padding:8px;" th:text="#{admin.words.col.type}">Tür</th>
+                    <th style="padding:8px;"></th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="w : ${words}" th:with="confirmMsg=#{admin.words.deleteConfirm}" style="border-bottom: 1px solid #f0f0f0;">
+                    <td style="padding:8px; color:#666;" th:text="${w.topic.language.code}"></td>
+                    <td style="padding:8px; color:#666;" th:text="${w.topic.name} + ' (' + ${w.topic.level} + ')'"></td>
+                    <td style="padding:8px; font-weight:600;" th:text="${w.sourceText}"></td>
+                    <td style="padding:8px;" th:text="${w.targetText}"></td>
+                    <td style="padding:8px; color:#666;">
+                        <span th:if="${w.wordType != null}" th:text="#{${'wordtype.' + w.wordType}}"></span>
+                    </td>
+                    <td style="padding:8px;">
+                        <form th:action="@{'/admin/words/' + ${w.id} + '/delete'}" method="post"
+                              th:attr="onsubmit=|return confirm('${confirmMsg}')|">
+                            <button type="submit" class="link-button" style="color:#c0392b;" th:text="#{admin.words.delete}">Sil</button>
+                        </form>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+</body>
+</html>

@@ -33,7 +33,15 @@
             <tbody>
                 <th:block th:each="item : ${wordPage.content}">
                     <tr style="border-bottom: 1px solid #f0f0f0;">
-                        <td style="padding:8px; font-weight:600;" th:text="${item.sourceText}"></td>
+                        <td style="padding:8px; font-weight:600;">
+                            <span th:text="${item.sourceText}"></span>
+                            <button type="button"
+                                    class="link-button speak-btn"
+                                    style="margin-left: 5px; color: #2b2f77; font-size: 1.1rem; vertical-align: middle;"
+                                    th:attr="onclick=|speakWord('${item.sourceText}', '${item.topic.language.code}')|,title=#{wordlist.listen}">
+                                🔊
+                            </button>
+                        </td>
                         <td style="padding:8px;" th:text="${item.targetText}"></td>
                         <td style="padding:8px;">
                             <span th:if="${item.wordType != null}" th:text="#{${'wordtype.' + item.wordType}}"
@@ -83,6 +91,20 @@
 </div>
 
 <script th:inline="javascript">
+    function speakWord(text, lang) {
+        if (!('speechSynthesis' in window)) {
+            alert('Your browser does not support speech synthesis.');
+            return;
+        }
+        
+        // Cancel any ongoing speech
+        window.speechSynthesis.cancel();
+        
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = lang; // e.g. 'en', 'ru'
+        window.speechSynthesis.speak(utterance);
+    }
+
     const loadedConjugations = {};
 
     // Sunucudan gelen mesaj anahtarlarini JS'e tasiyoruz - boylece cekim

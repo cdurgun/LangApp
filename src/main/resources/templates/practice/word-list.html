@@ -101,8 +101,37 @@
         window.speechSynthesis.cancel();
         
         const utterance = new SpeechSynthesisUtterance(text);
-        utterance.lang = lang; // e.g. 'en', 'ru'
-        window.speechSynthesis.speak(utterance);
+        
+        // Dil kodunu normalize et (örn: 'en' -> 'en-US')
+        // Tarayıcı sesleri genellikle bölge koduyla gelir.
+        let targetLang = lang;
+        if (lang === 'en') targetLang = 'en-US';
+        if (lang === 'ru') targetLang = 'ru-RU';
+        if (lang === 'tr') targetLang = 'tr-TR';
+
+        utterance.lang = targetLang;
+
+        const speak = () => {
+            const voices = window.speechSynthesis.getVoices();
+            if (voices.length > 0) {
+                // Daha kaliteli bir ses seçmeye çalış (Google veya Natural sesler genellikle daha iyidir)
+                // 1. Tercih: Google tarafından sağlanan ilgili dildeki ses
+                // 2. Tercih: İlgili dildeki herhangi bir ses
+                const preferredVoice = voices.find(v => v.lang.startsWith(lang) && v.name.includes('Google')) 
+                                    || voices.find(v => v.lang.startsWith(lang));
+                
+                if (preferredVoice) {
+                    utterance.voice = preferredVoice;
+                }
+            }
+            window.speechSynthesis.speak(utterance);
+        };
+
+        if (window.speechSynthesis.getVoices().length === 0) {
+            window.speechSynthesis.addEventListener('voiceschanged', speak, { once: true });
+        } else {
+            speak();
+        }
     }
 
     const loadedConjugations = {};

@@ -48,6 +48,13 @@ button:hover, .btn:hover { background: #1f234f; }
     background: #eef0fb; color: #1f2430;
 }
 .option-btn:hover { background: #dcdff5; }
+.speak-btn {
+    opacity: 0.6;
+    transition: opacity 0.2s;
+}
+.speak-btn:hover {
+    opacity: 1;
+}
 .flashcard {
     text-align: center; padding: 40px; font-size: 1.4rem; border: 2px dashed #c8cbee;
     border-radius: 12px; margin-bottom: 16px;

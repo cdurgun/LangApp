@@ -14,6 +14,9 @@
         <div th:unless="${#lists.isEmpty(flashcards)}">
             <div id="flashcard-area">
                 <div class="flashcard" id="card-text">...</div>
+                <button id="speak-btn" type="button" class="link-button speak-btn"
+                        style="margin: 0; color: #2b2f77; font-size: 1.1rem;"
+                        th:title="#{wordlist.listen}">🔊</button>
                 <button id="flip-btn" onclick="flipCard()" th:text="#{flashcards.flip}">Çeviriyi Göster</button>
                 <div id="assess-buttons" style="display:none; margin-top:14px;">
                     <button onclick="assess(true)" th:text="#{flashcards.knew}">Biliyordum ✓</button>
@@ -27,9 +30,67 @@
 
 <script th:inline="javascript">
     const cards = /*[[${flashcards}]]*/ [];
+    const targetLanguageCode = /*[[${targetLanguage}]]*/ 'en';
     const doneText = /*[[#{flashcards.done}]]*/ 'Tüm kartları bitirdin! 🎉';
     let index = 0;
     let flipped = false;
+
+    const regionalLanguageCodes = {
+        en: 'en-US',
+        ru: 'ru-RU',
+        tr: 'tr-TR'
+    };
+
+    function normalizeLanguageCode(languageCode) {
+        return regionalLanguageCodes[languageCode] || languageCode;
+    }
+
+    function voiceQualityScore(voice, targetLanguage) {
+        const name = voice.name.toLowerCase();
+        const voiceLanguage = voice.lang.toLowerCase();
+        const target = targetLanguage.toLowerCase();
+        let score = 0;
+
+        if (voiceLanguage === target) score += 100;
+        else if (voiceLanguage.startsWith(target.split('-')[0] + '-')) score += 70;
+
+        if (/natural|neural|enhanced|premium|online/.test(name)) score += 50;
+        if (/google|microsoft|apple|siri/.test(name)) score += 20;
+        if (voice.localService === false) score += 5;
+
+        return score;
+    }
+
+    function selectBestVoice(voices, targetLanguage) {
+        return voices
+            .filter(voice => voice.lang.toLowerCase().startsWith(targetLanguage.split('-')[0].toLowerCase()))
+            .sort((first, second) => voiceQualityScore(second, targetLanguage) - voiceQualityScore(first, targetLanguage))[0];
+    }
+
+    function speakCurrentCard() {
+        if (index >= cards.length || !('speechSynthesis' in window)) return;
+
+        window.speechSynthesis.cancel();
+        const speakButton = document.getElementById('speak-btn');
+        const targetLanguage = normalizeLanguageCode(targetLanguageCode);
+        const utterance = new SpeechSynthesisUtterance(cards[index].sourceText);
+        utterance.lang = targetLanguage;
+        utterance.rate = 0.9;
+        speakButton.setAttribute('aria-busy', 'true');
+        utterance.onend = utterance.onerror = () => speakButton.removeAttribute('aria-busy');
+
+        const speak = () => {
+            const preferredVoice = selectBestVoice(window.speechSynthesis.getVoices(), targetLanguage);
+            if (preferredVoice) utterance.voice = preferredVoice;
+            window.speechSynthesis.speak(utterance);
+        };
+
+        if (window.speechSynthesis.getVoices().length === 0) {
+            window.speechSynthesis.addEventListener('voiceschanged', speak, { once: true });
+        } else {
+            speak();
+        }
+    }
 
     function renderCard() {
         if (index >= cards.length) {
@@ -37,12 +98,14 @@
             document.getElementById('flip-btn').style.display = 'none';
             document.getElementById('assess-buttons').style.display = 'none';
             document.getElementById('progress-text').innerText = '';
+            document.getElementById('speak-btn').style.display = 'none';
             return;
         }
         flipped = false;
         document.getElementById('card-text').innerText = cards[index].sourceText;
         document.getElementById('assess-buttons').style.display = 'none';
         document.getElementById('flip-btn').style.display = 'inline-block';
+        document.getElementById('speak-btn').style.display = 'inline-block';
         document.getElementById('progress-text').innerText = (index + 1) + ' / ' + cards.length;
     }
 
@@ -62,6 +125,7 @@
             });
     }
 
+    document.getElementById('speak-btn').addEventListener('click', speakCurrentCard);
     renderCard();
 </script>
 </body>

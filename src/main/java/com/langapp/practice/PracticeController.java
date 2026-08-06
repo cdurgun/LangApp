@@ -52,6 +52,7 @@ public class PracticeController {
     public String flashcards(@AuthenticationPrincipal AppUserDetails principal, Model model) {
         User user = principal.getUser();
         model.addAttribute("flashcards", practiceService.getFlashcardsForLanguage(user.getTargetLanguage()));
+        model.addAttribute("targetLanguage", user.getTargetLanguage());
         return "practice/flashcards";
     }
 

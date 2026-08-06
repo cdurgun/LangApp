@@ -38,7 +38,7 @@
                             <button type="button"
                                     class="link-button speak-btn"
                                     style="margin-left: 5px; color: #2b2f77; font-size: 1.1rem; vertical-align: middle;"
-                                    th:attr="onclick=|speakWord('${item.sourceText}', '${item.topic.language.code}')|,title=#{wordlist.listen}">
+                                    th:attr="data-word=${item.sourceText},data-language=${item.topic.language.code},title=#{wordlist.listen}">
                                 🔊
                             </button>
                         </td>
@@ -91,39 +91,61 @@
 </div>
 
 <script th:inline="javascript">
-    function speakWord(text, lang) {
+    const regionalLanguageCodes = {
+        en: 'en-US',
+        ru: 'ru-RU',
+        tr: 'tr-TR'
+    };
+
+    function normalizeLanguageCode(languageCode) {
+        return regionalLanguageCodes[languageCode] || languageCode;
+    }
+
+    function voiceQualityScore(voice, targetLanguage) {
+        const name = voice.name.toLowerCase();
+        const voiceLanguage = voice.lang.toLowerCase();
+        const target = targetLanguage.toLowerCase();
+        let score = 0;
+
+        // Aynı bölgenin sesi, yalnızca aynı dil ailesinden bir sesten daha doğaldır.
+        if (voiceLanguage === target) score += 100;
+        else if (voiceLanguage.startsWith(target.split('-')[0] + '-')) score += 70;
+
+        // İşletim sistemi ve tarayıcıların yüksek kaliteli sesleri bu ifadeleri kullanır.
+        if (/natural|neural|enhanced|premium|online/.test(name)) score += 50;
+        if (/google|microsoft|apple|siri/.test(name)) score += 20;
+        if (voice.localService === false) score += 5;
+
+        return score;
+    }
+
+    function selectBestVoice(voices, targetLanguage) {
+        return voices
+            .filter(voice => voice.lang.toLowerCase().startsWith(targetLanguage.split('-')[0].toLowerCase()))
+            .sort((first, second) => voiceQualityScore(second, targetLanguage) - voiceQualityScore(first, targetLanguage))[0];
+    }
+
+    function speakWord(text, languageCode, button) {
         if (!('speechSynthesis' in window)) {
             alert('Your browser does not support speech synthesis.');
             return;
         }
-        
-        // Cancel any ongoing speech
-        window.speechSynthesis.cancel();
-        
-        const utterance = new SpeechSynthesisUtterance(text);
-        
-        // Dil kodunu normalize et (örn: 'en' -> 'en-US')
-        // Tarayıcı sesleri genellikle bölge koduyla gelir.
-        let targetLang = lang;
-        if (lang === 'en') targetLang = 'en-US';
-        if (lang === 'ru') targetLang = 'ru-RU';
-        if (lang === 'tr') targetLang = 'tr-TR';
 
-        utterance.lang = targetLang;
+        window.speechSynthesis.cancel();
+
+        const utterance = new SpeechSynthesisUtterance(text);
+        const targetLanguage = normalizeLanguageCode(languageCode);
+        utterance.lang = targetLanguage;
+        utterance.rate = 0.9;
+
+        if (button) button.setAttribute('aria-busy', 'true');
+        utterance.onend = utterance.onerror = () => {
+            if (button) button.removeAttribute('aria-busy');
+        };
 
         const speak = () => {
-            const voices = window.speechSynthesis.getVoices();
-            if (voices.length > 0) {
-                // Daha kaliteli bir ses seçmeye çalış (Google veya Natural sesler genellikle daha iyidir)
-                // 1. Tercih: Google tarafından sağlanan ilgili dildeki ses
-                // 2. Tercih: İlgili dildeki herhangi bir ses
-                const preferredVoice = voices.find(v => v.lang.startsWith(lang) && v.name.includes('Google')) 
-                                    || voices.find(v => v.lang.startsWith(lang));
-                
-                if (preferredVoice) {
-                    utterance.voice = preferredVoice;
-                }
-            }
+            const preferredVoice = selectBestVoice(window.speechSynthesis.getVoices(), targetLanguage);
+            if (preferredVoice) utterance.voice = preferredVoice;
             window.speechSynthesis.speak(utterance);
         };
 
@@ -133,6 +155,12 @@
             speak();
         }
     }
+
+    document.querySelectorAll('.speak-btn').forEach(button => {
+        button.addEventListener('click', () => {
+            speakWord(button.dataset.word, button.dataset.language, button);
+        });
+    });
 
     const loadedConjugations = {};
 

@@ -4,6 +4,8 @@ import com.langapp.content.*;
 import com.langapp.progress.Attempt;
 import com.langapp.progress.AttemptRepository;
 import com.langapp.progress.ExerciseType;
+import com.langapp.progress.FlashcardReview;
+import com.langapp.progress.FlashcardReviewRepository;
 import com.langapp.progress.UserProgress;
 import com.langapp.progress.UserProgressRepository;
 import com.langapp.user.User;
@@ -23,6 +25,7 @@ public class PracticeService {
     private final TopicRepository topicRepository;
     private final UserProgressRepository userProgressRepository;
     private final AttemptRepository attemptRepository;
+    private final FlashcardReviewRepository flashcardReviewRepository;
     private final AnswerCheckService answerCheckService;
     private final UserService userService;
 
@@ -32,6 +35,7 @@ public class PracticeService {
                             TopicRepository topicRepository,
                             UserProgressRepository userProgressRepository,
                             AttemptRepository attemptRepository,
+                            FlashcardReviewRepository flashcardReviewRepository,
                             AnswerCheckService answerCheckService,
                             UserService userService) {
         this.vocabItemRepository = vocabItemRepository;
@@ -40,16 +44,28 @@ public class PracticeService {
         this.topicRepository = topicRepository;
         this.userProgressRepository = userProgressRepository;
         this.attemptRepository = attemptRepository;
+        this.flashcardReviewRepository = flashcardReviewRepository;
         this.answerCheckService = answerCheckService;
         this.userService = userService;
     }
 
-    public List<FlashcardView> getFlashcardsForLanguage(String languageCode) {
-        List<VocabItem> items = vocabItemRepository.findByTopicLanguageCode(languageCode);
+    /**
+     * Sadece "suresi gelen" kelimeleri dondurur: hic incelenmemis (yeni) kelimeler
+     * ya da SM-2 tekrar tarihi bugune gelmis/gecmis kelimeler. Iyi bilinen
+     * kelimeler, tekrar tarihleri ilerledigi icin giderek daha az sikliklarla
+     * bu listeye girer.
+     */
+    public List<FlashcardView> getFlashcardsForLanguage(User user, String languageCode) {
+        List<VocabItem> items = vocabItemRepository.findDueFlashcards(user.getId(), languageCode);
         Collections.shuffle(items);
         return items.stream()
                 .map(item -> new FlashcardView(item.getId(), item.getSourceText(), item.getTargetText(), item.getAudioUrl()))
                 .toList();
+    }
+
+    /** Bu dilde hic kelime var mi kontrolu - "bugun tekrar yok" ile "hic kelime yok" mesajlarini ayirt etmek icin. */
+    public boolean hasAnyWordsForLanguage(String languageCode) {
+        return !vocabItemRepository.findByTopicLanguageCode(languageCode).isEmpty();
     }
 
     public List<QuizQuestion> getQuizForLanguage(String languageCode) {
@@ -82,12 +98,23 @@ public class PracticeService {
         return correct;
     }
 
-    /** Flashcard'i "biliyorum" / "bilmiyorum" olarak isaretlemek icin - kullanici kendi degerlendirir. */
+    /**
+     * Flashcard'i "biliyorum" / "bilmiyorum" olarak isaretlemek icin - kullanici kendi degerlendirir.
+     * Hem eski (konu bazinda mastery %) takibini hem yeni SM-2 tekrar zamanlamasini gunceller.
+     * @return bir sonraki tekrara kadar gecen gun sayisi (arayuzde geri bildirim icin)
+     */
     @Transactional
-    public void submitFlashcardSelfAssessment(User user, Long vocabItemId, boolean knewIt) {
+    public int submitFlashcardSelfAssessment(User user, Long vocabItemId, boolean knewIt) {
         VocabItem item = vocabItemRepository.findById(vocabItemId)
                 .orElseThrow(() -> new IllegalArgumentException("Kelime bulunamadi: " + vocabItemId));
         recordAttempt(user, ExerciseType.FLASHCARD, vocabItemId, knewIt, null, item.getTopic());
+
+        FlashcardReview review = flashcardReviewRepository.findByUserIdAndVocabItemId(user.getId(), vocabItemId)
+                .orElseGet(() -> new FlashcardReview(user, item));
+        review.applyReview(knewIt);
+        flashcardReviewRepository.save(review);
+
+        return review.getIntervalDays();
     }
 
     private void recordAttempt(User user, ExerciseType type, Long exerciseId, boolean correct, String userAnswer, Topic topic) {

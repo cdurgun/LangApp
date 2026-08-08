@@ -12,6 +12,8 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 @Controller
 @RequestMapping("/practice")
 public class PracticeController {
@@ -51,18 +53,21 @@ public class PracticeController {
     @GetMapping("/flashcards")
     public String flashcards(@AuthenticationPrincipal AppUserDetails principal, Model model) {
         User user = principal.getUser();
-        model.addAttribute("flashcards", practiceService.getFlashcardsForLanguage(user.getTargetLanguage()));
+        var due = practiceService.getFlashcardsForLanguage(user, user.getTargetLanguage());
+        model.addAttribute("flashcards", due);
         model.addAttribute("targetLanguage", user.getTargetLanguage());
+        // "Bugun tekrar edilecek kelime yok" ile "bu dilde hic kelime yok" mesajlarini ayirt etmek icin.
+        model.addAttribute("allDone", due.isEmpty() && practiceService.hasAnyWordsForLanguage(user.getTargetLanguage()));
         return "practice/flashcards";
     }
 
     @PostMapping("/flashcards/{id}/assess")
     @ResponseBody
-    public String assessFlashcard(@AuthenticationPrincipal AppUserDetails principal,
-                                   @PathVariable Long id,
-                                   @RequestParam boolean knewIt) {
-        practiceService.submitFlashcardSelfAssessment(principal.getUser(), id, knewIt);
-        return "ok";
+    public Map<String, Integer> assessFlashcard(@AuthenticationPrincipal AppUserDetails principal,
+                                                 @PathVariable Long id,
+                                                 @RequestParam boolean knewIt) {
+        int intervalDays = practiceService.submitFlashcardSelfAssessment(principal.getUser(), id, knewIt);
+        return Map.of("intervalDays", intervalDays);
     }
 
     // --- Quiz ---

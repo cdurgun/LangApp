@@ -49,4 +49,18 @@ public interface VocabItemRepository extends JpaRepository<VocabItem, Long> {
 
     /** Silme sirasinda: bu kelimeye aspect_pair_id ile isaret eden baska kayit var mi kontrolu. */
     List<VocabItem> findByAspectPairId(Long aspectPairId);
+
+    /**
+     * Flashcard kuyrugu icin: bu dildeki kelimelerden, kullanici icin ya hic
+     * inceleme kaydi olmayanlari (yeni kelime) ya da tekrar tarihi gelmis/gecmis
+     * olanlari (FlashcardReview.nextReviewDate <= bugun) dondurur. Boylece
+     * "biliyorum" denen kelimeler daha az sıklıkla, yeni/zayif kelimeler daha
+     * sik gosterilir. FlashcardReview'in ON kosuluyla LEFT JOIN edilmesi,
+     * hic incelenmemis kelimelerin de (r IS NULL) listeye girmesini sagliyor.
+     */
+    @Query("SELECT v FROM VocabItem v JOIN v.topic t JOIN t.language l " +
+            "LEFT JOIN FlashcardReview r ON r.vocabItem = v AND r.user.id = :userId " +
+            "WHERE l.code = :languageCode " +
+            "AND (r IS NULL OR r.nextReviewDate <= CURRENT_DATE)")
+    List<VocabItem> findDueFlashcards(@Param("userId") Long userId, @Param("languageCode") String languageCode);
 }

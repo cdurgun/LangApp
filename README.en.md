@@ -1,8 +1,8 @@
 # LangApp — English / Russian Practice App
 
-A language-learning app skeleton built with Spring Boot 3 + Spring MVC +
-Thymeleaf + Spring Security + PostgreSQL, featuring flashcards, quizzes,
-and translation practice.
+A language-learning app built with Spring Boot 3 + Spring MVC + Thymeleaf +
+Spring Security + PostgreSQL, featuring flashcards, quizzes, translation
+practice, a bilingual (TR/EN) interface, and spoken pronunciation.
 
 ## Requirements
 - Java 21
@@ -25,11 +25,12 @@ Update the connection settings in `src/main/resources/application.properties`
 ```bash
 mvn spring-boot:run
 ```
-The schema is now managed by Flyway via
-`src/main/resources/db/migration/V1__init.sql` — the app applies the
-migration automatically on first startup. When you need a future schema
+The schema is managed by Flyway via the files in
+`src/main/resources/db/migration/`: `V1__init.sql`,
+`V2__add_admin_flag.sql`, `V3__add_audio_url.sql` — the app applies all of
+them in order automatically on first startup. When you need a future schema
 change (new column/table), don't edit an existing migration — add a new
-file like `V2__description.sql` instead.
+file like `V4__description.sql` instead.
 
 ### 3. Load sample content
 ```bash
@@ -37,7 +38,8 @@ psql -U langapp_user -d langapp -f src/main/resources/db/seed.sql
 ```
 This script adds a handful of English/Russian words, quiz questions, and
 translation exercises. You can load your own content the same way, either
-via SQL or from a CSV using `\copy`.
+via SQL, from a CSV using `\copy`, or through the in-app `/admin/words`
+screen (see below).
 
 ### 4. Run the application again
 ```bash
@@ -50,7 +52,7 @@ Go to `http://localhost:8080` in your browser, register via `/register`
 ```
 com.langapp
 ├── config       → SecurityConfig (form login, session-based auth), LocaleConfig (language switching)
-├── user         → User entity, registration/login, streak tracking
+├── user         → User entity, registration/login, streak tracking, admin flag
 ├── content      → Language, Topic, VocabItem, QuizQuestion, TranslationExercise
 ├── progress     → UserProgress (mastery %), Attempt (attempt log)
 ├── practice     → PracticeService, AnswerCheckService (fuzzy match), PracticeController
@@ -64,6 +66,49 @@ com.langapp
 > database and start fresh (`DROP DATABASE langapp;` then re-run step 1).
 > If you want to keep your existing data instead, look into the
 > `flyway baseline` command.
+
+## Language Support (Bilingual UI)
+
+The app's interface works in both Turkish and English. Click the
+**"TR · EN"** links in the top-right corner to switch — the choice is
+stored in a cookie (`langapp.locale`, 365 days), so it's remembered on your
+next visit too.
+
+Under the hood: `LocaleConfig` (a cookie-based `LocaleResolver` +
+`LocaleChangeInterceptor`) intercepts every request and looks for a
+`?lang=tr` / `?lang=en` parameter; screen text comes from
+`src/main/resources/messages.properties` (Turkish, default) and
+`messages_en.properties` (English). When adding new text, remember to add
+it to both files — otherwise you'll see something like "?? key ??" in the
+missing language.
+
+## Spoken Pronunciation
+
+Every word in the word list and flashcards has a 🔊 button next to it. It
+works in two layers:
+
+1. **Default: browser TTS (Web Speech API).** Free, no setup required. The
+   `selectBestVoice()` function automatically picks the best-quality voice
+   available for the target language (favoring ones labeled
+   natural/neural/premium). Quality can vary depending on the user's OS/
+   browser.
+2. **Preferred: `audio_url` override.** If a word's `vocab_items` row has
+   its `audio_url` field set (via the admin screen or SQL), the button
+   plays that audio file instead of using browser TTS. If the file fails to
+   load (broken link, 404, etc.), it automatically falls back to TTS — the
+   user is never left with silence.
+
+This second layer exists mainly for Russian words where the stress mark
+(´) matters — browser TTS engines don't reliably respect stress notation,
+so attaching a verified audio file for the trickier words gives a more
+consistent experience.
+
+You can set this from the "Audio File URL (optional)" field on the add-word
+form at `/admin/words`. Adding audio to existing words currently requires
+SQL (the admin screen doesn't have an edit feature yet):
+```sql
+UPDATE vocab_items SET audio_url = 'https://.../word.mp3' WHERE source_text = 'word';
+```
 
 ## Deploying to Production (Railway)
 
@@ -120,8 +165,8 @@ and the app already reads it via `server.port=${PORT:8080}`.
 
 ### 3. Deploy
 Railway detects the `Dockerfile` and builds/deploys automatically. On first
-boot, Flyway applies the migrations (`V1__init.sql`, `V2__add_admin_flag.sql`)
-to the empty database, creating all the tables.
+boot, Flyway applies the migrations (`V1`, `V2`, `V3`) to the empty
+database, creating all the tables.
 
 ### 4. Load content
 After deploying, you need to run `seed.sql` and the other content scripts
@@ -190,9 +235,12 @@ it's actually up.
 
 ## Admin — Word Management
 
-Words can now be added through the `/admin/words` screen without needing a
-SQL script (the existing seed scripts are still valid for bulk-loading
-content — both approaches can be used together).
+Words can be added through the `/admin/words` screen without needing a SQL
+script (the existing seed scripts are still valid for bulk-loading content
+— both approaches can be used together). The form covers topic, word,
+translation, example sentence, word type, verb aspect, matching verb, and
+an optional audio file URL. Currently only add/delete is supported — no
+editing yet.
 
 This screen is only accessible to admin users. To make yourself an admin
 (after the migrations have run, i.e. after starting the app at least once):
@@ -207,10 +255,11 @@ should see an "Admin" link in the navbar.
 
 ## Ideas for Next Steps
 - Spaced repetition (SM-2 algorithm) — currently uses a simple mastery %
-- Audio pronunciation (VocabItem already has an `audio_url` field ready; a
-  file/service could be wired up)
 - Turn quizzes into an "N-question session" flow (currently shows one
   random question at a time)
-- Editing existing words from the admin screen (currently add/delete only)
-- Managing topics from the admin screen (currently topics are still
-  created via SQL)
+- Editing existing words and creating topics from the admin screen
+- Bulk Cloud TTS generation (Google Cloud TTS with SSML support for
+  correct stress; a script to auto-fill `audio_url` for words that don't
+  have one yet)
+- A preprocessing step that strips the stress mark (´) before sending text
+  to browser TTS

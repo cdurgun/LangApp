@@ -5,5 +5,5 @@ package com.langapp.practice;
  * Boylece Jackson, entity uzerindeki LAZY iliskilere (topic, topic.language)
  * dokunup Hibernate LazyInitializationException firlatmiyor.
  */
-public record FlashcardView(Long id, String sourceText, String targetText) {
+public record FlashcardView(Long id, String sourceText, String targetText, String audioUrl) {
 }

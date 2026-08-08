@@ -68,16 +68,38 @@
     }
 
     function speakCurrentCard() {
-        if (index >= cards.length || !('speechSynthesis' in window)) return;
+        if (index >= cards.length) return;
+
+        const card = cards[index];
+        const speakButton = document.getElementById('speak-btn');
+
+        if (card.audioUrl) {
+            playAudioFile(card.audioUrl, speakButton, () => speakWithTts(card.sourceText, speakButton));
+            return;
+        }
+
+        speakWithTts(card.sourceText, speakButton);
+    }
+
+    function playAudioFile(url, button, onFallback) {
+        const player = new Audio(url);
+        if (button) button.setAttribute('aria-busy', 'true');
+        const clearBusy = () => { if (button) button.removeAttribute('aria-busy'); };
+        player.onended = clearBusy;
+        player.onerror = () => { clearBusy(); if (onFallback) onFallback(); };
+        player.play().catch(() => { clearBusy(); if (onFallback) onFallback(); });
+    }
+
+    function speakWithTts(text, speakButton) {
+        if (!('speechSynthesis' in window)) return;
 
         window.speechSynthesis.cancel();
-        const speakButton = document.getElementById('speak-btn');
         const targetLanguage = normalizeLanguageCode(targetLanguageCode);
-        const utterance = new SpeechSynthesisUtterance(cards[index].sourceText);
+        const utterance = new SpeechSynthesisUtterance(text);
         utterance.lang = targetLanguage;
         utterance.rate = 0.9;
-        speakButton.setAttribute('aria-busy', 'true');
-        utterance.onend = utterance.onerror = () => speakButton.removeAttribute('aria-busy');
+        if (speakButton) speakButton.setAttribute('aria-busy', 'true');
+        utterance.onend = utterance.onerror = () => { if (speakButton) speakButton.removeAttribute('aria-busy'); };
 
         const speak = () => {
             const preferredVoice = selectBestVoice(window.speechSynthesis.getVoices(), targetLanguage);

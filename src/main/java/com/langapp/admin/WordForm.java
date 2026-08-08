@@ -28,4 +28,7 @@ public class WordForm {
 
     /** Aspect esi olan mevcut fiilin id'si, opsiyonel */
     private Long pairId;
+
+    /** Opsiyonel, elle girilmis ses dosyasi linki - doluysa TTS yerine bu calinir */
+    private String audioUrl;
 }

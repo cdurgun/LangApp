@@ -29,6 +29,7 @@ public class AdminWordService {
         item.setSourceText(form.getSourceText().trim());
         item.setTargetText(form.getTargetText().trim());
         item.setExampleSentence(blankToNull(form.getExampleSentence()));
+        item.setAudioUrl(blankToNull(form.getAudioUrl()));
 
         if (form.getWordType() != null && !form.getWordType().isBlank()) {
             item.setWordType(WordType.valueOf(form.getWordType()));

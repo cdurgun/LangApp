@@ -48,4 +48,12 @@ public class VocabItem {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "aspect_pair_id")
     private VocabItem aspectPair;
+
+    /**
+     * Opsiyonel, elle girilmis ses dosyasi linki. Doluysa on yuzde tarayici TTS
+     * yerine bu dosya calinir - ozellikle vurgusu kritik kelimeler icin kaliteli,
+     * dogrulanmis telaffuz saglamak amaciyla.
+     */
+    @Column(name = "audio_url")
+    private String audioUrl;
 }

@@ -50,6 +50,10 @@
                 <option th:each="v : ${verbs}" th:value="${v.id}" th:text="${v.sourceText} + ' (' + ${v.targetText} + ')'"></option>
             </select>
 
+            <label th:text="#{admin.words.audioUrl}">Ses Dosyası Linki (opsiyonel)</label>
+            <input type="url" th:field="*{audioUrl}" th:placeholder="#{admin.words.audioUrlPlaceholder}">
+            <p style="color:#666; font-size:0.85rem; margin-top:-10px;" th:text="#{admin.words.audioUrlHint}"></p>
+
             <button type="submit" th:text="#{admin.words.submit}" style="margin-top:16px;">Ekle</button>
         </form>
     </div>
@@ -64,6 +68,7 @@
                     <th style="padding:8px;" th:text="#{admin.words.col.word}">Kelime</th>
                     <th style="padding:8px;" th:text="#{admin.words.col.translation}">Karşılığı</th>
                     <th style="padding:8px;" th:text="#{admin.words.col.type}">Tür</th>
+                    <th style="padding:8px;" th:text="#{admin.words.col.audio}">Ses</th>
                     <th style="padding:8px;"></th>
                 </tr>
             </thead>
@@ -75,6 +80,11 @@
                     <td style="padding:8px;" th:text="${w.targetText}"></td>
                     <td style="padding:8px; color:#666;">
                         <span th:if="${w.wordType != null}" th:text="#{${'wordtype.' + w.wordType}}"></span>
+                    </td>
+                    <td style="padding:8px;">
+                        <audio th:if="${w.audioUrl != null}" th:src="${w.audioUrl}" controls
+                               style="height:28px; width:140px;"></audio>
+                        <span th:if="${w.audioUrl == null}" style="color:#bbb;" th:text="#{admin.words.audioTts}"></span>
                     </td>
                     <td style="padding:8px;">
                         <form th:action="@{'/admin/words/' + ${w.id} + '/delete'}" method="post"

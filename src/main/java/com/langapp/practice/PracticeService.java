@@ -48,7 +48,7 @@ public class PracticeService {
         List<VocabItem> items = vocabItemRepository.findByTopicLanguageCode(languageCode);
         Collections.shuffle(items);
         return items.stream()
-                .map(item -> new FlashcardView(item.getId(), item.getSourceText(), item.getTargetText()))
+                .map(item -> new FlashcardView(item.getId(), item.getSourceText(), item.getTargetText(), item.getAudioUrl()))
                 .toList();
     }
 

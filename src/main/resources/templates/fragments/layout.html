@@ -4,6 +4,11 @@
     <meta charset="UTF-8">
     <title th:text="${title} + ' - LangApp'">LangApp</title>
     <link rel="stylesheet" th:href="@{/css/style.css}">
+    <!-- JS fetch() cagrilarinin CSRF token'ini okuyabilmesi icin (klasik <form> gonderimlerinde
+         Thymeleaf bunu otomatik ekliyor, ama fetch() ile atilan POST/DELETE isteklerinde elle
+         header olarak eklenmesi gerekiyor). -->
+    <meta name="_csrf" th:content="${_csrf.token}">
+    <meta name="_csrf_header" th:content="${_csrf.headerName}">
 </head>
 <body>
 <nav th:fragment="navbar" class="navbar">

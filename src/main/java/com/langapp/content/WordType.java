@@ -9,5 +9,6 @@ public enum WordType {
     PREPOSITION,   // edat/ilgeç
     CONJUNCTION,   // bağlaç
     NUMERAL,       // sayı
+    INTERJECTION,  // Ünlem
     OTHER          // diğer
 }
